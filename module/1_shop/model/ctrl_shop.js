@@ -24,7 +24,7 @@ function loadCars(total_prod = 0, items_page = 4) {
     } else if (redirect_like != false) {
         redirect_login_like();
     } else {
-        ajaxForSearch('module/shop/ctrl/ctrl_shop.php?op=all_cars', total_prod, items_page);
+        ajaxForSearch('module/1_shop/ctrl/ctrl_shop.php?op=getEntradas', total_prod, items_page);
     }
 }
 
