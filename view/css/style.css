@@ -1,0 +1,57 @@
+/* ── Reset básico ─────────────────────────────── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0a0a0a;
+    color: #F5F0E8;
+    font-family: 'DM Sans', Arial, sans-serif;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ── Wrapper general ──────────────────────────── */
+#wrapper {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ── Menú ─────────────────────────────────────── */
+#menu {
+    background: #111;
+    border-bottom: 2px solid #FF5C00;
+    padding: 12px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+}
+
+#menu a {
+    color: #aaa;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    transition: color .15s;
+}
+
+#menu a:hover {
+    color: #FF5C00;
+}
+
+/* ── Header ───────────────────────────────────── */
+#header {
+    padding: 16px 0;
+}
+
+/* ── Footer ───────────────────────────────────── */
+#footer {
+    margin-top: 40px;
+}
