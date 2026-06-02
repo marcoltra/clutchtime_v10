@@ -1,0 +1,239 @@
+<style>
+.home-wrapper {
+  width: 100%;
+  padding: 0 0 50px;
+}
+
+/* cabecera simple */
+.home-header {
+  padding: 30px 0 20px;
+  border-bottom: 2px solid #FF5C00;
+  margin-bottom: 10px;
+}
+.home-header h1 {
+  font-size: 2rem;
+  color: #F5F0E8;
+  margin-bottom: 6px;
+}
+.home-header h1 span { color: #FF5C00; }
+.home-header p { color: #888; font-size: .9rem; }
+.home-header a {
+  display: inline-block;
+  margin-top: 12px;
+  background: #FF5C00;
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: .88rem;
+  font-weight: 600;
+}
+.home-header a:hover { background: #CC4800; }
+
+/* secciones */
+.home-section { padding: 28px 0 10px; }
+.home-section h2 {
+  font-size: 1.3rem;
+  color: #F5F0E8;
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #FF5C00;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+/* botones carrusel */
+.swiper-button-prev, .swiper-button-next {
+  color: #FF5C00 !important;
+  --swiper-navigation-size: 18px;
+}
+.swiper-pagination-bullet-active { background: #FF5C00 !important; }
+
+/* tarjeta evento */
+.slide-evento {
+  height: 240px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 14px;
+  border: 1px solid #333;
+}
+.slide-evento:hover { opacity: .9; }
+.slide-evento__bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+}
+.slide-evento__overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,.85) 0%, transparent 60%);
+}
+.slide-evento__icon { position: absolute; top: 12px; right: 12px; font-size: 1.8rem; z-index: 2; }
+.slide-evento__badge {
+  position: relative; z-index: 2;
+  display: inline-block;
+  background: #FF5C00; color: #fff;
+  font-size: .65rem; font-weight: 700; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px; margin-bottom: 6px;
+}
+.slide-evento__title {
+  position: relative; z-index: 2;
+  font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 4px;
+}
+.slide-evento__meta {
+  position: relative; z-index: 2;
+  font-size: .72rem; color: rgba(255,255,255,.6);
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.slide-evento__cta { position: relative; z-index: 2; margin-top: 8px; font-size: .72rem; color: #FF5C00; font-weight: 600; }
+
+/* tarjeta partido */
+.slide-partido {
+  height: 185px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+.slide-partido:hover { border-color: #FF5C00; }
+.slide-partido__teams { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.slide-partido__team  { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; }
+.slide-partido__badge {
+  width: 48px; height: 48px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .85rem; color: #fff;
+}
+.slide-partido__team-name { font-size: .62rem; color: #999; text-align: center; line-height: 1.2; }
+.slide-partido__center { display: flex; flex-direction: column; align-items: center; gap: 2px; flex-shrink: 0; }
+.slide-partido__score  { font-size: 1.5rem; font-weight: 700; color: #FF5C00; }
+.slide-partido__vs     { font-size: 1.3rem; font-weight: 700; color: #444; }
+.slide-partido__meta   { font-size: .68rem; color: #555; display: flex; justify-content: space-between; align-items: center; }
+.slide-partido__estado { font-size: .58rem; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 3px; }
+.s-fin  { background: #2a2a2a; color: #555; }
+.s-prog { background: #2a2000; color: #ffaa00; }
+.s-live { background: #002a15; color: #00cc66; }
+.slide-partido__cta { font-size: .68rem; color: #FF5C00; font-weight: 600; text-align: right; }
+
+/* tarjeta equipo */
+.slide-equipo {
+  height: 150px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid #333;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px;
+}
+.slide-equipo:hover { border-color: #FF5C00; }
+.slide-equipo__logo {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; font-weight: 700; font-size: .9rem; color: #fff;
+  position: relative;
+}
+.slide-equipo__logo img { width: 70%; height: 70%; object-fit: contain; }
+.slide-equipo__logo .fb { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; font-weight: 900; }
+.slide-equipo__name { font-size: .9rem; font-weight: 700; color: #ddd; text-align: center; text-transform: uppercase; letter-spacing: .02em; line-height: 1.2; }
+.slide-equipo__conf { font-size: .62rem; color: #666; text-transform: uppercase; }
+
+/* tarjeta jugador */
+.slide-jugador {
+  height: 140px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+}
+.slide-jugador:hover { border-color: #FF5C00; }
+.slide-jugador__avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0; position: relative;
+}
+.slide-jugador__avatar img { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+.slide-jugador__avatar .jfb { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; }
+.slide-jugador__info { flex: 1; min-width: 0; }
+.slide-jugador__num  { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.slide-jugador__name { font-size: .9rem; font-weight: 600; color: #ddd; }
+.slide-jugador__pos  { font-size: .68rem; color: #777; margin-top: 2px; }
+.slide-jugador__team { font-size: .65rem; color: #555; margin-top: 4px; }
+
+/* tarjeta categoría */
+.slide-categoria {
+  height: 120px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 12px;
+}
+.slide-categoria:hover { border-color: #FF5C00; }
+.slide-categoria__icon  { font-size: 1.7rem; }
+.slide-categoria__name  { font-size: .88rem; font-weight: 700; color: #ddd; text-transform: uppercase; text-align: center; line-height: 1.2; }
+.slide-categoria__nivel { font-size: .62rem; color: #FF5C00; font-weight: 600; text-transform: uppercase; }
+</style>
+
+<div class="home-wrapper">
+
+  <div class="home-header">
+    <h1>Clutch<span>Time</span> 🏀</h1>
+    <p>Entradas para eventos y partidos de la NBA</p>
+    <a href="index.php?page=tienda&op=view">Ver todas las entradas</a>
+  </div>
+
+  <section class="home-section">
+    <h2>Eventos</h2>
+    <div class="swiper swiper-eventos" style="padding:0 40px 20px">
+      <div class="swiper-wrapper" id="slides-eventos"></div>
+      <div class="swiper-pagination"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+  </section>
+
+  <section class="home-section">
+    <h2>Partidos</h2>
+    <div class="swiper swiper-partidos" style="padding:0 40px 20px">
+      <div class="swiper-wrapper" id="slides-partidos"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+  </section>
+
+  <section class="home-section">
+    <h2>Equipos</h2>
+    <div class="swiper swiper-equipos" style="padding:0 40px 20px">
+      <div class="swiper-wrapper" id="slides-equipos"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+  </section>
+
+  <section class="home-section">
+    <h2>Jugadores</h2>
+    <div class="swiper swiper-jugadores" style="padding:0 40px 20px">
+      <div class="swiper-wrapper" id="slides-jugadores"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+  </section>
+
+  <section class="home-section">
+    <h2>Categorías</h2>
+    <div class="swiper swiper-categorias" style="padding:0 40px 20px">
+      <div class="swiper-wrapper" id="slides-categorias"></div>
+      <div class="swiper-button-prev"></div>
+      <div class="swiper-button-next"></div>
+    </div>
+  </section>
+
+</div>
+<script src="module/home/model/controller_home.js"></script>

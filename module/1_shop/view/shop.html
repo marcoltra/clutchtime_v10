@@ -1,0 +1,292 @@
+<style>
+/* ── Shop layout ────────────────────────────────────────────── */
+#shop-layout {
+  display: flex; gap: 24px; align-items: flex-start; margin-top: 20px;
+}
+#shop-sidebar {
+  width: 255px; flex-shrink: 0;
+  display: flex; flex-direction: column; gap: 10px;
+  position: sticky; top: 72px;
+  padding-right: 2px; padding-bottom: 16px;
+}
+#shop-main { flex: 1; min-width: 0; }
+
+@media (max-width: 860px) {
+  #shop-layout { flex-direction: column; }
+  #shop-sidebar { width: 100%; position: static; max-height: none; }
+}
+
+/* ── Ticket card ────────────────────────────────────────────── */
+.ticket-card {
+  background: #111; border: 1px solid #222; border-radius: 12px;
+  padding: 20px; display: flex; flex-direction: column; gap: 8px;
+  transition: border-color .2s, transform .2s;
+  cursor: default;
+}
+.ticket-card:hover { border-color: #FF5C00; transform: translateY(-3px); }
+.ticket-card.destacado { border-color: #ff9500; }
+
+/* ── Card image header ──────────────────────────────────────── */
+.tc-img-header {
+  height: 148px; border-radius: 10px 10px 0 0; margin: -20px -20px 14px;
+  overflow: hidden; position: relative; display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+}
+.tc-img-header img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s; }
+.ticket-card:hover .tc-img-header img { transform: scale(1.05); }
+.tc-img-fallback {
+  width: 100%; height: 100%; display: flex; align-items: center;
+  justify-content: center; font-size: 3.5rem;
+}
+.tc-img-overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 10px 14px;
+  background: linear-gradient(to top, rgba(0,0,0,.75) 0%, transparent 100%);
+}
+
+/* ── VS header (partidos) ───────────────────────────────────── */
+.tc-vs-header {
+  height: 148px; border-radius: 10px 10px 0 0; margin: -20px -20px 14px;
+  overflow: hidden; position: relative; display: flex;
+  align-items: center; justify-content: space-between;
+  padding: 0 20px; gap: 10px; flex-shrink: 0;
+  cursor: pointer;
+}
+.tc-vs-header:hover { filter: brightness(1.12); }
+.tc-vs-team-blk { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.tc-team-click { cursor: pointer; transition: transform .15s; }
+.tc-team-click:hover { transform: scale(1.08); }
+.tc-vs-badge {
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 900;
+  font-size: .9rem; color: #fff; border: 2px solid rgba(255,255,255,.18); overflow: hidden;
+}
+.tc-vs-badge img { width: 75%; height: 75%; object-fit: contain; }
+.tc-vs-team-lbl { font-size: .62rem; color: #aaa; text-align: center; font-weight: 600; line-height: 1.2; max-width: 70px; }
+.tc-vs-sep { font-family: 'Barlow Condensed', sans-serif; font-size: 1.6rem; font-weight: 900; color: rgba(255,255,255,.22); flex-shrink: 0; }
+
+/* ── Spinner ────────────────────────────────────────────────── */
+.shop-spinner {
+  grid-column: 1 / -1; display: flex; align-items: center; justify-content: center;
+  padding: 80px 0; gap: 14px; color: #555; font-size: .9rem;
+}
+.shop-spinner::before {
+  content: ''; width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid rgba(255,92,0,.2); border-top-color: #FF5C00;
+  animation: shopSpin .7s linear infinite;
+}
+@keyframes shopSpin { to { transform: rotate(360deg); } }
+
+/* ── Grid de tickets ────────────────────────────────────────── */
+#shop-tickets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1100px) { #shop-tickets-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { #shop-tickets-grid { grid-template-columns: 1fr; } }
+
+/* ── Order bar (estilo coches.net) ──────────────────────────── */
+#shop-order-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; gap: 12px;
+}
+#shop-results-info { font-size: .8rem; color: #555; min-height: 18px; flex: 1; }
+#order-dropdown-wrap { position: relative; flex-shrink: 0; }
+#order-dropdown-btn {
+  background: none; border: 1px solid #333; border-radius: 6px;
+  color: #aaa; font-size: .82rem; padding: 5px 12px;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  font-family: inherit; transition: border-color .15s, color .15s;
+  white-space: nowrap;
+}
+#order-dropdown-btn:hover { border-color: #FF5C00; color: #F5F0E8; }
+#order-dropdown-btn .ob-arrow {
+  font-size: .7rem; transition: transform .2s; display: inline-block;
+}
+#order-dropdown-btn.open .ob-arrow { transform: rotate(180deg); }
+#order-label { color: #FF5C00; font-weight: 700; }
+#order-dropdown-list {
+  display: none; position: absolute; right: 0; top: calc(100% + 6px);
+  background: #1a1a1a; border: 1px solid #333; border-radius: 8px;
+  min-width: 210px; z-index: 200; overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+}
+#order-dropdown-list.open { display: block; }
+.order-option {
+  padding: 10px 16px; font-size: .82rem; color: #aaa;
+  cursor: pointer; transition: background .12s, color .12s;
+}
+.order-option:hover { background: #222; color: #F5F0E8; }
+.order-option.active { color: #FF5C00; font-weight: 700; }
+
+/* ── Paginación ─────────────────────────────────────────────── */
+#shop-pagination { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 28px 0 12px; }
+.pag-btn {
+  min-width: 36px; height: 36px; padding: 0 10px;
+  background: #1a1a1a; color: #888; border: 1px solid #333;
+  border-radius: 6px; cursor: pointer; font-size: .85rem;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.pag-btn:hover  { background: #2a2a2a; color: #F5F0E8; border-color: #555; }
+.pag-btn.pag-active { background: #FF5C00; color: #fff; border-color: #FF5C00; }
+.pag-btn.pag-nav { padding: 0 14px; color: #777; font-size: 1.1rem; }
+
+/* ── Relacionados ───────────────────────────────────────────── */
+.related-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.4rem; font-weight: 800; color: #F5F0E8;
+  border-left: 4px solid #FF5C00; padding-left: 12px; margin-bottom: 18px;
+}
+.related-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+@media (max-width: 1100px) { .related-list { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px)  { .related-list { grid-template-columns: 1fr; } }
+
+.related-more-wrap { display: flex; justify-content: center; margin-top: 22px; }
+.related-more-btn {
+  background: transparent; border: 2px solid #FF5C00;
+  color: #FF5C00; padding: 10px 28px; border-radius: 8px;
+  font-family: 'Barlow Condensed', sans-serif; font-size: 1rem;
+  font-weight: 700; cursor: pointer; letter-spacing: .04em;
+  transition: background .18s, color .18s;
+}
+.related-more-btn:hover { background: #FF5C00; color: #fff; }
+
+/* ── Detail extras ──────────────────────────────────────────── */
+.detail-img-wrap {
+  border-radius: 14px; overflow: hidden; aspect-ratio: 16/9;
+  background: #141414; margin-bottom: 16px; position: relative;
+}
+.detail-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.detail-img-fb {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; font-size: 5rem; background: #141414; color: #333;
+}
+</style>
+
+<div id="shop-wrapper">
+  <div class="shop-hero">
+    <h1>🏀 Entradas NBA</h1>
+    <p>Encuentra entradas para todos los eventos y partidos de la NBA</p>
+  </div>
+
+  <div id="shop-layout">
+
+    <!-- ── SIDEBAR FILTROS ──────────────────────────────────── -->
+    <aside id="shop-sidebar">
+
+      <div class="sf-group">
+        <span class="sf-group-label">Tipo</span>
+        <div class="sf-tabs">
+          <button class="sf-tab sf-active" data-tipo="todos">Todos</button>
+          <button class="sf-tab" data-tipo="evento">Eventos</button>
+          <button class="sf-tab" data-tipo="partido">Partidos</button>
+        </div>
+      </div>
+
+      <div class="sf-group" id="sf-g-tipo-evt">
+        <span class="sf-group-label">Tipo de evento</span>
+        <div class="sf-check-list" id="sf-list-tipo-evento"></div>
+      </div>
+
+      <div class="sf-group">
+        <span class="sf-group-label">Ciudad</span>
+        <div class="sf-check-list" id="sf-list-ciudades"></div>
+      </div>
+
+      <div class="sf-group" id="sf-g-temporada">
+        <span class="sf-group-label">Temporada</span>
+        <div class="sf-field">
+          <select id="sf-sel-temporada" class="sf-select">
+            <option value="">Todas</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sf-group">
+        <span class="sf-group-label">Categoría</span>
+        <div class="sf-check-list" id="sf-list-categorias"></div>
+      </div>
+
+      <div class="sf-group">
+        <span class="sf-group-label">Estado del partido</span>
+        <div class="sf-check-list" id="sf-list-estados"></div>
+      </div>
+
+      <div class="sf-group">
+        <span class="sf-group-label">Precio máximo</span>
+        <div class="sf-price-vals">
+          <span>0 €</span><span id="sf-price-val">250 €</span>
+        </div>
+        <div class="sf-price-slider">
+          <div class="sf-track"></div>
+          <div class="sf-fill" id="sf-price-fill" style="width:100%"></div>
+          <input type="range" class="sf-range" id="sf-price-range" min="0" max="250" value="250" step="5">
+        </div>
+      </div>
+
+      <button id="sf-btn-clear" class="sf-clear" style="width:100%;margin-top:2px">✕ Limpiar filtros</button>
+    </aside>
+
+    <!-- ── MAIN ────────────────────────────────────────────── -->
+    <main id="shop-main">
+
+      <!-- Lista -->
+      <div id="shop-list-view">
+        <div id="shop-order-bar">
+          <div id="shop-results-info"></div>
+          <div id="order-dropdown-wrap">
+            <button id="order-dropdown-btn">
+              Ordenar: <span id="order-label">Sin ordenar</span>
+              <span class="ob-arrow">▼</span>
+            </button>
+            <ul id="order-dropdown-list">
+              <li class="order-option" data-value="0">Sin ordenar</li>
+              <li class="order-option" data-value="precio_asc">Precio: menor a mayor</li>
+              <li class="order-option" data-value="precio_desc">Precio: mayor a menor</li>
+              <li class="order-option" data-value="fecha_asc">Fecha: más próxima</li>
+              <li class="order-option" data-value="fecha_desc">Fecha: más lejana</li>
+            </ul>
+          </div>
+        </div>
+        <div id="shop-tickets-grid">
+          <div class="shop-spinner">Cargando entradas…</div>
+        </div>
+        <div id="shop-pagination"></div>
+      </div>
+
+      <!-- Detalle -->
+      <div id="shop-detail-view" style="display:none">
+        <button class="tc-btn-back" id="btn-back-list">← Volver a resultados</button>
+        <div id="shop-detail-content"></div>
+
+        <!-- Entradas relacionadas -->
+        <div id="related-tickets-section" style="display:none; margin-top:36px">
+          <h3 class="related-title">Entradas relacionadas</h3>
+          <div class="related-list"></div>
+          <div class="related-more-wrap"></div>
+        </div>
+
+        <div class="pd-map-section" style="margin-top:36px">
+          <p class="pd-map-label">📍 Ubicación del recinto</p>
+          <div id="detail-map" class="detail-map"></div>
+        </div>
+      </div>
+
+      <!-- Mapa principal -->
+      <div id="shop-map-wrap" class="shop-main-map-wrap">
+        <p class="shop-main-map-label">📍 Todos los recintos NBA</p>
+        <div id="shop-main-map"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="module/1_shop/model/ctrl_shop.js"></script>
