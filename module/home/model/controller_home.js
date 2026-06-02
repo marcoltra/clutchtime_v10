@@ -128,7 +128,8 @@ function load_Partidos() {
         for (var row in data) {
             $('<div></div>').addClass('swiper-slide').appendTo('#slides-partidos')
             .html(
-                '<div class="slide-partido">' +
+                '<div class="slide-partido" style="height:185px; overflow:hidden; background-image:url(' + data[row].imagen_url + '); background-size:cover; background-position:center;">' +
+                '<div style="background:rgba(0,0,0,0.6); height:185px; padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; box-sizing:border-box;">' +
                 '<div class="slide-partido__teams">' +
                 '<div class="slide-partido__team">' +
                 '<div class="slide-partido__badge" style="background:' + data[row].color_local + '">' +
@@ -147,6 +148,7 @@ function load_Partidos() {
                 '</div>' +
                 '</div>' +
                 '<div class="slide-partido__meta">' + data[row].fecha + ' · ' + data[row].estado + '</div>' +
+                '</div>' +
                 '</div>'
             );
         }
