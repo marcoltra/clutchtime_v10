@@ -113,15 +113,6 @@ case 'details_entrada':
     }
     break;
 
-    case 'count_more_visit':
-    $id_entrada = $_POST['id_entrada'];
-    try {
-        $daoCount = new DAOShop();
-        $daoCount->count_more_visit($id_entrada);
-    } catch (Exception $e) {
-        echo json_encode("error");
-    }
-    break;
 
     case 'order_filter':
     $opc_order  = $_GET['order'];

@@ -3,550 +3,389 @@ $path = $_SERVER['DOCUMENT_ROOT'] . '/clutchtime_v10';
 include($path . "/model/connect.php");
 
 class DAOShop{
-	function select_all_cars($total_prod,$items_page){
-		$sql = "SELECT * 
-		FROM car c, model m
-		WHERE c.model = m.id_model  
-		ORDER BY c.count DESC
-		LIMIT $total_prod, $items_page";
+	function select_entradas($desde, $items) {
+    $conexion = connect::con();
+    $sql_eventos = "SELECT 'evento' AS tipo, id_evento AS id,
+                    nombre, imagen_url, fecha_inicio AS fecha
+                    FROM eventos
+                    LIMIT $desde, $items";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $sql_partidos = "SELECT 'partido' AS tipo, id_partido AS id,
+                    fecha, imagen_url, estado
+                    FROM partidos
+                    LIMIT $desde, $items";
+    $res_eventos  = mysqli_query($conexion, $sql_eventos);
+    $res_partidos = mysqli_query($conexion, $sql_partidos);
+    connect::close($conexion);
+    $retrArray = array();
+    while ($row = mysqli_fetch_assoc($res_eventos)) {
+        $retrArray[] = $row;
+    }
+    while ($row = mysqli_fetch_assoc($res_partidos)) {
+        $retrArray[] = $row;
+    }
+    return $retrArray;
+}
+	function select_one_entrada($id, $tipo) {
+    if ($tipo == 'evento') {
+        $sql = "SELECT * FROM eventos e
+                JOIN ciudades c ON e.id_ciudad = c.id_ciudad
+                WHERE e.id_evento = '$id'";
+    } else {
+        $sql = "SELECT * FROM partidos p
+                JOIN equipos el ON p.id_equipo_local = el.id_equipo
+                JOIN equipos ev ON p.id_equipo_visitante = ev.id_equipo
+                WHERE p.id_partido = '$id'";
+    }
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
+    return mysqli_fetch_assoc($res);
+}
+	function select_filter_entradas() {
+    $ciudad    = $_GET['ciudad']    ?? '*';
+    $tipo      = $_GET['tipo']      ?? '*';
+    $temporada = $_GET['temporada'] ?? '*';
+    $filtros = "";
+    if ($ciudad != '*') {
+        $filtros .= "AND c.nombre = '$ciudad'";
+    }
+    if ($tipo != '*') {
+        $filtros .= "AND e.tipo = '$tipo'";
+    }
+    $sql = "SELECT 'evento' AS tipo, id_evento AS id, 
+            nombre, imagen_url, fecha_inicio AS fecha
+            FROM eventos e
+            JOIN ciudades c ON e.id_ciudad = c.id_ciudad
+            WHERE 1=1 $filtros
+            UNION ALL
+            SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN equipos el ON p.id_equipo_local = el.id_equipo
+            WHERE 1=1";
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-	function select_one_car($id){
-		$sql = "SELECT *
-		FROM car c, model m, type_motor t, category ca
-		WHERE c.id_car = '$id'
-		AND  c.model = m.id_model 
-		AND c.category = ca.id_cat
-		AND c.motor = t.cod_tmotor";
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
+	function select_filter_home($opc, $valor) {
+    if ($opc == 'equipo') {
+        $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+                estado AS nombre, imagen_url, fecha
+                FROM partidos p
+                JOIN equipos el ON p.id_equipo_local = el.id_equipo
+                JOIN equipos ev ON p.id_equipo_visitante = ev.id_equipo
+                WHERE el.nombre = '$valor'
+                OR ev.nombre = '$valor'";
+    } else if ($opc == 'ciudad') {
+        $sql = "SELECT 'evento' AS tipo, id_evento AS id,
+                nombre, imagen_url, fecha_inicio AS fecha
+                FROM eventos e
+                JOIN ciudades c ON e.id_ciudad = c.id_ciudad
+                WHERE c.nombre = '$valor'";
+    } else {
+        $sql = "SELECT 'evento' AS tipo, id_evento AS id,
+                nombre, imagen_url, fecha_inicio AS fecha
+                FROM eventos
+                WHERE tipo = '$valor'";
+    }
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql)->fetch_object();
-		connect::close($conexion);
-
-		return $res;
-	}
-
-	function select_imgs_car($id){
-		$sql = "SELECT i.id_car, i.img_cars
-			    FROM img_cars i
-			    WHERE i.id_car = '$id'";
-
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-
-		$imgArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			foreach ($res as $row) {
-				array_push($imgArray, $row);
-			}
-		}
-		return $imgArray;
-	}
-
-	function select_filter_cars(){
-		$total_prod =  $_POST['total_prod'];
-		$items_page =  $_POST['items_page'];
-
-		//coger las variable de cada uno de lso filtros que vienen parseadas de antes
-		$doors = $_GET['doors'];
-		$color = $_GET['color'];
-		$category = $_GET['category'];
-
-		//Guardaremos los filtros pulsados dependoendo de si estan llenos o no
-		$filtros = "";
-
-		if ($color != '*' && $doors == '*' && $category == '*') {
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		} else if ($color == '*' && $doors != '*' && $category == '*') {
-			$filtros = "num_doors = '" . $doors . "'";
-		} else if ($color == '*' && $doors == '*' && $category != '*') {
-			$filtros = "category = '" . $category . "'";
-		} else if ($color != '*' && $doors != '*' && $category == '*') {
-			$filtros = "num_doors = '" . $doors . "' AND";
-
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		} else if ($color != '*' && $doors == '*' && $category != '*') {
-			$filtros = "category = '" . $category . "' AND";
-
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		} else if ($color == '*' && $doors != '*' && $category != '*') {
-			$filtros = "num_doors = '" . $doors . "' AND category = '" . $category . "'";
-		} else {
-			$filtros = "num_doors = '" . $doors . "' AND category = '" . $category . "' AND";
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		}
-
-		if ($doors == '*' && $color == '*' && $category == '*') {
-			$sql = "SELECT c.*,m.id_brand, m.name_model, t.name_tmotor, ca.name_cat
-			FROM car c, model m, type_motor t, category ca
-			WHERE  c.model = m.id_model 
-			AND c.category = ca.id_cat
-			AND c.motor = t.cod_tmotor
-			LIMIT $total_prod, $items_page";
-					
-		} else {
-			$sql = "SELECT c.*,m.id_brand, m.name_model, t.name_tmotor, ca.name_cat
-			FROM car c, model m, type_motor t, category ca
-			WHERE  c.model = m.id_model 
-			AND c.category = ca.id_cat
-			AND c.motor = t.cod_tmotor
-			AND $filtros
-			LIMIT $total_prod, $items_page";
-		}
-
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-		
-		$filtArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$filtArray[] = $row;
-			}
-		}
-		return $filtArray;
-	}
-
-	function select_filter_home(){
-		$opc_filter = $_GET['opc'];
-		$filter = "";
-
-		if ($opc_filter == "brand") {
-			$brand = $_GET['brand'];
-			$filter = "m.id_brand = '" . $brand . "'";
-		} else if ($opc_filter == "cate") {
-			$category = $_GET['category'];
-			$filter = "ca.name_cat = '" . $category . "'";
-		} else {
-			$type_motor = $_GET['motor'];
-			$filter = "t.name_tmotor = '" . $type_motor . "'";
-		}
-
-		$sql = "SELECT c.*,m.id_brand, m.name_model, t.name_tmotor, ca.name_cat
-    	FROM car c, model m, type_motor t, category ca
-    	WHERE  c.model = m.id_model 
-    	AND c.category = ca.id_cat
-    	AND c.motor = t.cod_tmotor
-    	AND $filter";
-
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-
-		$carArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			foreach ($res as $row) {
-				array_push($carArray, $row);
-			}
-		}
-		return $carArray;
-	}
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
 	//SEARCH////
-	function select_motor_search($motor){
-		$sql = "SELECT *
-			FROM car c, type_motor t ,model m
-			WHERE c.motor = t.cod_tmotor
-			AND c.model = m.id_model
-			AND t.cod_tmotor= '$motor'";
+function select_equipo_search($equipo) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN equipos el ON p.id_equipo_local = el.id_equipo
+            JOIN equipos ev ON p.id_equipo_visitante = ev.id_equipo
+            WHERE el.id_equipo = '$equipo'
+            OR ev.id_equipo = '$equipo'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function select_brand_search($brand){
-		$sql = "SELECT *
-				FROM car c,model m
-				WHERE c.model = m.id_model
-				AND m.id_brand= '$brand'";
+function select_ciudad_search($ciudad) {
+    $sql = "SELECT 'evento' AS tipo, id_evento AS id,
+            nombre, imagen_url, fecha_inicio AS fecha
+            FROM eventos e
+            JOIN ciudades c ON e.id_ciudad = c.id_ciudad
+            WHERE c.id_ciudad = '$ciudad'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function select_city_search($city){
-		$sql = "SELECT *
-				FROM car c, model m
-				WHERE c.model = m.id_model
-				AND c.city= '$city'";
+function select_temporada_search($temporada) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN temporadas t ON p.id_temporada = t.id_temporada
+            WHERE t.nombre = '$temporada'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function select_motor_brand_search($motor, $brand){
-		$sql = "SELECT *
-				FROM car c, type_motor t, model m
-				WHERE c.model = m.id_model
-				AND c.motor = t.cod_tmotor
-				AND t.cod_tmotor = '$motor'
-				AND m.id_brand = '$brand'";
+function select_equipo_ciudad_search($equipo, $ciudad) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN equipos el ON p.id_equipo_local = el.id_equipo
+            JOIN equipos ev ON p.id_equipo_visitante = ev.id_equipo
+            JOIN ciudades c ON el.id_ciudad = c.id_ciudad
+            WHERE (el.id_equipo = '$equipo' OR ev.id_equipo = '$equipo')
+            AND c.id_ciudad = '$ciudad'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function select_brand_city_search($brand, $city){
-		$sql = "SELECT *
-				FROM car c, model m
-				WHERE c.model = m.id_model	
-				AND m.id_brand= '$brand'
-				AND c.city= '$city'";
+function select_equipo_temporada_search($equipo, $temporada) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN equipos el ON p.id_equipo_local = el.id_equipo
+            JOIN equipos ev ON p.id_equipo_visitante = ev.id_equipo
+            JOIN temporadas t ON p.id_temporada = t.id_temporada
+            WHERE (el.id_equipo = '$equipo' OR ev.id_equipo = '$equipo')
+            AND t.nombre = '$temporada'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function select_motor_city_search($motor, $city){
-		$sql = "SELECT *
-				FROM car c, type_motor t ,model m
-				WHERE c.motor = t.cod_tmotor
-				AND c.model = m.id_model
-				AND t.cod_tmotor= '$motor'
-				AND c.city= '$city'";
+function select_ciudad_temporada_search($ciudad, $temporada) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN equipos el ON p.id_equipo_local = el.id_equipo
+            JOIN temporadas t ON p.id_temporada = t.id_temporada
+            JOIN ciudades c ON el.id_ciudad = c.id_ciudad
+            WHERE c.id_ciudad = '$ciudad'
+            AND t.nombre = '$temporada'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function select_all_search($motor, $brand, $city){
-		$sql = "SELECT *
-				FROM car c, type_motor t ,model m
-				WHERE c.motor = t.cod_tmotor
-				AND c.model = m.id_model
-				AND t.cod_tmotor= '$motor'
-				AND m.id_brand= '$brand'
-				AND c.city= '$city'";
+function select_all_search($equipo, $ciudad, $temporada) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos p
+            JOIN equipos el ON p.id_equipo_local = el.id_equipo
+            JOIN equipos ev ON p.id_equipo_visitante = ev.id_equipo
+            JOIN temporadas t ON p.id_temporada = t.id_temporada
+            JOIN ciudades c ON el.id_ciudad = c.id_ciudad
+            WHERE (el.id_equipo = '$equipo' OR ev.id_equipo = '$equipo')
+            AND c.id_ciudad = '$ciudad'
+            AND t.nombre = '$temporada'";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-	function count_more_visit($id){
-		$sql = "UPDATE car c SET c.count = c.count+1
-				WHERE C.id_car = '$id'";
+	function select_entradas_order($order, $desde, $items) {
+    $sql = "SELECT 'evento' AS tipo, id_evento AS id,
+            nombre, imagen_url, fecha_inicio AS fecha
+            FROM eventos
+            UNION ALL
+            SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos
+            ORDER BY $order
+            LIMIT $desde, $items";
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-	}
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-	function select_all_cars_order($order,$total_prod,$items_page){
-		$sql = "SELECT * 
-		FROM car c, model m
-		WHERE c.model = m.id_model  
-		ORDER BY c.$order ASC
-		LIMIT $total_prod,$items_page";
-
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
 	// COUNT PAGINATION
-	function select_count_all(){
-		$sql = "SELECT COUNT(*) AS n_prod FROM car;";
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-		return $res;
-	}
+function select_count_entradas() {
+    $sql = "SELECT COUNT(*) AS n_prod FROM eventos";
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
+    return $res; 
+}
+	function count_filter_entradas() {
+    $ciudad = $_GET['ciudad'] ?? '*';
+    $tipo   = $_GET['tipo']   ?? '*';
 
-	function count_filter_cars(){	
-		//coger las variable de cada uno de lso filtros que vienen parseadas de antes
-		$doors = $_GET['doors'];
-		$color = $_GET['color'];
-		$category = $_GET['category'];
+    $filtros = "";
+    if ($ciudad != '*') {
+        $filtros .= "AND c.nombre = '$ciudad'";
+    }
+    if ($tipo != '*') {
+        $filtros .= "AND e.tipo = '$tipo'";
+    }
 
-		//Guardaremos los filtros pulsados dependoendo de si estan llenos o no
-		$filtros = "";
+    $sql = "SELECT COUNT(*) AS n_prod
+            FROM eventos e
+            JOIN ciudades c ON e.id_ciudad = c.id_ciudad
+            WHERE 1=1 $filtros";
 
-		if ($color != '*' && $doors == '*' && $category == '*') {
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		} else if ($color == '*' && $doors != '*' && $category == '*') {
-			$filtros = "num_doors = '" . $doors . "'";
-		} else if ($color == '*' && $doors == '*' && $category != '*') {
-			$filtros = "category = '" . $category . "'";
-		} else if ($color != '*' && $doors != '*' && $category == '*') {
-			$filtros = "num_doors = '" . $doors . "' AND";
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		} else if ($color != '*' && $doors == '*' && $category != '*') {
-			$filtros = "category = '" . $category . "' AND";
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		} else if ($color == '*' && $doors != '*' && $category != '*') {
-			$filtros = "num_doors = '" . $doors . "' AND category = '" . $category . "'";
-		} else {
-			$filtros = "num_doors = '" . $doors . "' AND category = '" . $category . "' AND";
-			$exp_colors = explode(",", $color);
-			for ($i = 0; $i < sizeof($exp_colors); $i++) {
-				if ($i == 0) {
-					$filtros .= "(color ='" . $exp_colors[$i] . "'";
-				} else if ($i == (sizeof($exp_colors) - 1)) {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "')";
-				} else {
-					$filtros .= " OR color = '" . $exp_colors[$i] . "'";
-				}
-				if (sizeof($exp_colors) == 1) {
-					$filtros .= ")";
-				}
-			}
-		}
+	function count_entradas_order($order) {
+    $sql = "SELECT COUNT(*) AS n_prod
+            FROM (
+                SELECT id_evento AS id FROM eventos
+                UNION ALL
+                SELECT id_partido AS id FROM partidos
+            ) AS total";
 
-		if ($doors == '*' && $color == '*' && $category == '*') {
-			$sql = "SELECT COUNT(*) AS n_prod
-					FROM car c, model m, type_motor t, category ca
-			 		WHERE  c.model = m.id_model 
-					AND c.category = ca.id_cat
-					AND c.motor = t.cod_tmotor";		
-		} else {
-			$sql = "SELECT COUNT(*) AS n_prod
-					FROM car c, model m, type_motor t, category ca
-					WHERE  c.model = m.id_model 
-					AND c.category = ca.id_cat
-					AND c.motor = t.cod_tmotor
-					AND $filtros";
-		}
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-		
-		$filtArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$filtArray[] = $row;
-			}
-		}
-		return $filtArray;
-	} 
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
+	function count_entradas_related($tipo) {
+    $sql = "SELECT COUNT(*) AS n_prod
+            FROM partidos
+            WHERE estado = '$tipo'";
 
-	function count_all_cars_order($order){
-		$sql = "SELECT COUNT(*) AS n_prod
-		FROM car c, model m
-		WHERE c.model = m.id_model  
-		ORDER BY c.$order ASC";
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+function select_entradas_related($tipo, $loaded, $items) {
+    $sql = "SELECT 'partido' AS tipo, id_partido AS id,
+            estado AS nombre, imagen_url, fecha
+            FROM partidos
+            WHERE estado = '$tipo'
+            LIMIT $loaded, $items";
 
-	// MORE CARS RELATED
-	function count_more_cars_related($type_car){
-		$sql = "SELECT COUNT(*) AS n_prod
-				FROM car c 
-				WHERE c.motor = '$type_car'";
+    $conexion = connect::con();
+    $res = mysqli_query($conexion, $sql);
+    connect::close($conexion);
 
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
-
-	function select_cars_related($type, $loaded, $items){
-		$sql = "SELECT * 
-				FROM car c, model m
-				WHERE c.model = m.id_model 
-				AND c.motor = '$type'
-				LIMIT $loaded, $items";
-
-		$conexion = connect::con();
-		$res = mysqli_query($conexion, $sql);
-		connect::close($conexion);
-
-		
-		$retrArray = array();
-		if (mysqli_num_rows($res) > 0) {
-			while ($row = mysqli_fetch_assoc($res)) {
-				$retrArray[] = $row;
-			}
-		}
-		return $retrArray;
-	}
+    $retrArray = array();
+    if (mysqli_num_rows($res) > 0) {
+        while ($row = mysqli_fetch_assoc($res)) {
+            $retrArray[] = $row;
+        }
+    }
+    return $retrArray;
+}
 
 }
