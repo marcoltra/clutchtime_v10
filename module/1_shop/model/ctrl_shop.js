@@ -1,31 +1,5 @@
-function loadCars(total_prod = 0, items_page = 4) {
-    var verificate_filters = localStorage.getItem('filters') || false;
-    var brand_filter = localStorage.getItem('brand_filter') || false;
-    var category_filter = localStorage.getItem('category_filter') || false;
-    var motor_filter = localStorage.getItem('type_motor_filter') || false;
-    var verificate_search = localStorage.getItem('search') || false;
-    var verificate_orderBy = localStorage.getItem('order') || false;
-    var redirect_like = localStorage.getItem('redirect_like') || false;
-
-    if (verificate_filters != false) {
-        shop_filters(total_prod, items_page);
-        highlightFilters();
-    } else if (brand_filter != false) {
-        load_brand_filter();
-    } else if (category_filter != false) {
-        load_category_filter();
-    } else if (motor_filter != false) {
-        load_motor_filter();
-    } else if (verificate_search != false) {
-        load_search();
-    } else if (verificate_orderBy != false) {
-        load_orderby(total_prod, items_page);
-        highlightOrderBy();
-    } else if (redirect_like != false) {
-        redirect_login_like();
-    } else {
-        ajaxForSearch('module/1_shop/ctrl/ctrl_shop.php?op=getEntradas', total_prod, items_page);
-    }
+function loadEntradas(desde = 0, items = 12) {
+    ajaxForSearch('module/1_shop/ctrl/ctrl_shop.php?op=getEntradas', desde, items);
 }
 
 function ajaxForSearch(url, total_prod = 0, items_page = 12) {
@@ -38,7 +12,6 @@ function ajaxForSearch(url, total_prod = 0, items_page = 12) {
             total_prod = 0;
         }
     }
-
     ajaxPromise(url, 'POST', 'JSON', { 'desde': total_prod, 'items': items_page })
         .then(function(data) {
             $('#shop-tickets-grid').empty();
@@ -49,23 +22,28 @@ function ajaxForSearch(url, total_prod = 0, items_page = 12) {
             } else {
                 for (var row in data) {
                     if (data[row].tipo == 'evento') {
-                        $('<div></div>').attr({ 'id': data[row].id, 'class': 'ticket-card' }).appendTo('#shop-tickets-grid')
+                        $('<div></div>').attr({ 'id': data[row].id, 'class': 'ticket-card','data-tipo': 'evento' })
+                        .appendTo('#shop-tickets-grid')
                         .html(
                             '<div class="tc-img-header">' +
                             '<img src="' + data[row].imagen_url + '">' +
-                            '</div>' +
-                            '<div class="tc-img-overlay">' +
+                            '<div class="tc-img-overlay">' +  
                             '<b>' + data[row].nombre + '</b>' +
                             '</div>' +
+                            '</div>' +   
+                            '<div class="tc-title">' + data[row].nombre + '</div>' +
                             '<span>' + data[row].fecha + '</span>'
                         );
                     } else {
-                        $('<div></div>').attr({ 'id': data[row].id, 'class': 'ticket-card' }).appendTo('#shop-tickets-grid')
+                        $('<div></div>').attr({ 'id': data[row].id, 'class': 'ticket-card','data-tipo': 'partido' })
+                        .appendTo('#shop-tickets-grid')
                         .html(
                             '<div class="tc-vs-header">' +
-                            '<img src="' + data[row].imagen_url + '">' +
+                            '<img src="' + data[row].imagen_url + '" style="width:100%;height:100%;object-fit:cover;">' +
+                            '<div class="tc-img-overlay">' +
+                            '<b>' + data[row].nombre + '</b>' +
                             '</div>' +
-                            '<span>' + data[row].nombre + '</span>' +
+                            '</div>' +
                             '<span>' + data[row].fecha + '</span>'
                         );
                     }
@@ -77,82 +55,52 @@ function ajaxForSearch(url, total_prod = 0, items_page = 12) {
 }
 
 function clicks() {
-    $(document).on("click", ".more_info_list", function() {
-        var id_car = this.getAttribute('id');
-        loadDetails(id_car);
+    $(document).on("click", ".ticket-card", function() {
+        var id_entrada = this.getAttribute('id');
+        var tipo = this.getAttribute('data-tipo');
+        loadDetails(id_entrada, tipo);
     });
 }
 
-function loadDetails(id_car) {
-    ajaxPromise('module/1_shop/ctrl/ctrl_shop.php?op=details_entrada&id=' + id_car,
-        'GET', 'JSON')
+function loadDetails(id_entrada, tipo) {
+    ajaxPromise('module/1_shop/ctrl/ctrl_shop.php?op=details_entrada&id=' + id_entrada + '&tipo=' + tipo, 'GET', 'JSON')
     .then(function(data) {
-        $('#content_shop_cars').empty();
-        $('.date_img_dentro').empty();
-        $('.date_car_dentro').empty();
-        $('#div_filters').hide();
-        $('#div_map_shop').hide();
-        $('#div_map_details').show();
-        $('#pagination').empty();
-        $('.results').empty();
 
-        for (row in data[1][0]) {
-            $('<div></div>').attr({ 'id': data[1][0].id_img, class: 'date_img_dentro' }).appendTo('.date_img')
-                .html(
-                    "<div class='content-img-details'>" +
-                    "<img src= '" + data[1][0][row].img_cars + "'" + "</img>" +
-                    "</div>"
-                )
+        // Oculta la lista y muestra el detalle
+        $('#shop-list-view').hide();
+        $('#shop-detail-view').show();
+        $('#shop-detail-content').empty();
+
+        if (tipo == 'evento') {
+            $('#shop-detail-content').html(
+                '<div class="tc-img-header" style="height:250px;margin-bottom:20px;">' +
+                '<img src="' + data.imagen_url + '">' +
+                '</div>' +
+                '<h2 class="tc-title">' + data.nombre + '</h2>' +
+                '<div class="tc-meta">' +
+                '<span>📅 ' + data.fecha_inicio + '</span>' +
+                '<span>📍 ' + data.ciudad + '</span>' +
+                '<span>🏀 ' + data.tipo + '</span>' +
+                '</div>'
+            );
+        } else {
+            $('#shop-detail-content').html(
+                '<div class="tc-img-header" style="height:250px;margin-bottom:20px;">' +
+                '<img src="' + data.imagen_url + '">' +
+                '</div>' +
+                '<h2 class="tc-title">' + data.nombre_local + ' vs ' + data.nombre_visitante + '</h2>' +
+                '<div class="tc-meta">' +
+                '<span>📅 ' + data.fecha + '</span>' +
+                '<span>🏀 ' + data.estado + '</span>' +
+                '</div>'
+            );
         }
 
-        $('<div></div>').attr({ 'id': data[0].id_car, class: 'date_car_dentro' }).appendTo('.date_car')
-            .html(
-                "<div class='list_product_details'>" +
-                "<div class='product-info_details'>" +
-                "<div class='product-content_details'>" +
-                "<h1><b>" + data[0].id_brand + " " + data[0].name_model + "</b></h1>" +
-                "<hr class=hr-shop>" +
-                "<table id='table-shop'> <tr>" +
-                "<td> <i id='col-ico' class='fa-solid fa-road fa-2xl'></i> &nbsp;" + data[0].Km + "KM" + "</td>" +
-                "<td> <i id='col-ico' class='fa-solid fa-person fa-2xl'></i> &nbsp;" + data[0].gear_shift + "</td>  </tr>" +
-                "<td> <i id='col-ico' class='fa-solid fa-car fa-2xl'></i> &nbsp;" + data[0].name_cat + "</td>" +
-                "<td> <i id='col-ico' class='fa-solid fa-door-open fa-2xl'></i> &nbsp;" + data[0].num_doors + "</td>  </tr>" +
-                "<td> <i id='col-ico' class='fa-solid fa-gas-pump fa-2xl'></i> &nbsp;" + data[0].name_tmotor + "</td>" +
-                "<td> <i id='col-ico' class='fa-solid fa-calendar-days fa-2xl'></i> &nbsp;" + data[0].matricualtion_date + "</td>  </tr>" +
-                "<td> <i id='col-ico' class='fa-solid fa-palette fa-2xl'></i> &nbsp;" + data[0].color + "</td>" +
-                "<td> <i class='fa-solid fa-location-dot fa-2xl'></i> &nbsp;" + data[0].city + "</td> </tr>" +
-                "</table>" +
-                "<hr class=hr-shop>" +
-                "<h3><b>" + "More Information:" + "</b></h3>" +
-                "<p>This vehicle has a 2-year warranty and reviews during the first 6 months from its acquisition.</p>" +
-                "<div class='buttons_details'>" +
-                "<a class='button add' href='#'>Add to Cart</a>" +
-                "<a class='button buy' href='#'>Buy</a>" +
-                "<span class='button' id='price_details'>" + data[0].price + "<i class='fa-solid fa-euro-sign'></i> </span>" +
-                "<a class='details__heart' id='" + data[0].id_car + "'><i id=" + data[0].id_car + " class='fa-solid fa-heart fa-lg'></i></a>" +
-                "</div>" +
-                "</div>" +
-                "</div>" +
-                "</div>"
-            )
-        $('html, body').animate({ scrollTop: $(".date_car") });
-        load_map_details(data[0]);
-        addMarker_map(data[0], "details");
-        more_cars_related(data[0].motor);
+        $('html, body').animate({ scrollTop: 0 });
 
-        $('.date_img').slick({
-            infinite: true,
-            speed: 300,
-            slidesToShow: 1,
-            adaptiveHeight: true,
-            autoplay: true,
-            autoplaySpeed: 1500
-        });
     }).catch(function() {
-        // window.location.href = "index.php?module=ctrl_exceptions&op=503&type=503&lugar=Load_Details SHOP";
+        console.log('error loadDetails');
     });
-    ajaxPromise('module/1_shop/ctrl/ctrl_shop.php?op=count_more_visit', 'POST', 'JSON', { 'id_car': id_car })
-        .then(function(data) {}).catch(function() {});
 }
 
 function load_filter() {
@@ -616,10 +564,6 @@ function more_cars_related(type_car) {
 }
 
 $(document).ready(function() {
-    load_mapbox_variables();
-    load_filter();
-    loadCars();
+    loadEntradas();
     clicks();
-    save_orderby();
-    load_pagination();
 });
