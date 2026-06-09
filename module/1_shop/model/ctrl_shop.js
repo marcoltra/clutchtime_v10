@@ -1,4 +1,7 @@
+var todasLasEntradas = [];
+
 function loadEntradas(desde = 0, items = 12) {
+    var tipo = localStorage.getItem('filtro_tipo') || 'todos';
     ajaxForSearch('module/1_shop/ctrl/ctrl_shop.php?op=getEntradas', desde, items);
 }
 
@@ -53,7 +56,17 @@ function ajaxForSearch(url, total_prod = 0, items_page = 12) {
             console.log('error ajaxForSearch');
         });
 }
+function filter_tipo() {
+    $(document).on('click', '.sf-tab', function() {
+        $('.sf-tab').removeClass('sf-active');
+        $(this).addClass('sf-active');
 
+        var tipo = this.getAttribute('data-tipo');
+        localStorage.setItem('filtro_tipo', tipo);
+
+        loadEntradas();
+    });
+}
 function clicks() {
     $(document).on("click", ".ticket-card", function() {
         var id_entrada = this.getAttribute('id');
@@ -66,7 +79,6 @@ function loadDetails(id_entrada, tipo) {
     ajaxPromise('module/1_shop/ctrl/ctrl_shop.php?op=details_entrada&id=' + id_entrada + '&tipo=' + tipo, 'GET', 'JSON')
     .then(function(data) {
 
-        // Oculta la lista y muestra el detalle
         $('#shop-list-view').hide();
         $('#shop-detail-view').show();
         $('#shop-detail-content').empty();
@@ -79,7 +91,7 @@ function loadDetails(id_entrada, tipo) {
                 '<h2 class="tc-title">' + data.nombre + '</h2>' +
                 '<div class="tc-meta">' +
                 '<span>📅 ' + data.fecha_inicio + '</span>' +
-                '<span>📍 ' + data.ciudad + '</span>' +
+                '<span>📍 ' + data.nombre_ciudad  + '</span>' +
                 '<span>🏀 ' + data.tipo + '</span>' +
                 '</div>'
             );
@@ -103,60 +115,50 @@ function loadDetails(id_entrada, tipo) {
     });
 }
 
-function load_filter() {
-    $('<div></div>').attr({ 'id': 'filters', class: 'filters' }).appendTo('.filters_content')
-        .html(
-            '<div class="filters1">' +
-            '<p><u>SEARCH CAR:</u></p>' +
-            '<hr class=hr-filter>' +
-            '<div class="color">' +
-            '<h4>COLOR:</h4>' +
-            '<input type="checkbox" value="White" id="White" class="color">White</br>' +
-            '<input type="checkbox" value="Blue" id="Blue" class="color">Blue</br>' +
-            '<input type="checkbox" value="Black" id="Black" class="color">Black</br>' +
-            '<input type="checkbox" value="Red" id="Red" class="color">Red</br>' +
-            '<input type="checkbox" value="Grey" id="Grey" class="color">Grey</br>' +
-            '<input type="checkbox" value="Orange" id="Orange" class="color">Orange</br>' +
-            '<input type="checkbox" value="Brown" id="Brown" class="color">Brown</br>' +
+    function load_filter() {
+        $('#shop-sidebar').html(
+            '<div class="sf-group">' +
+            '<span class="sf-group-label">Tipo de evento</span>' +
+            '<div class="sf-check-list">' +
+            '<label class="sf-check-label"><input type="checkbox" class="sf-check tipo-evento" value="All-Star Game"><span class="sf-check-box"></span>All-Star Game</label>' +
+            '<label class="sf-check-label"><input type="checkbox" class="sf-check tipo-evento" value="Draft"><span class="sf-check-box"></span>Draft</label>' +
+            '<label class="sf-check-label"><input type="checkbox" class="sf-check tipo-evento" value="Playoffs"><span class="sf-check-box"></span>Playoffs</label>' +
+            '<label class="sf-check-label"><input type="checkbox" class="sf-check tipo-evento" value="Finals"><span class="sf-check-box"></span>Finals</label>' +
+            '<label class="sf-check-label"><input type="checkbox" class="sf-check tipo-evento" value="Summer League"><span class="sf-check-box"></span>Summer League</label>' +
             '</div>' +
-            '<hr class=hr-filter>' +
-            '<div class="doors">' +
-            '<h4>NUMBER DOORS:</h4>' +
-            '<input type="radio" name="doors" value="3" id="3" class="doors">3</br>' +
-            '<input type="radio" name="doors" value="5" id="5" class="doors">5</br>' +
             '</div>' +
-            '<hr class=hr-filter>' +
-            '<div class="doors">' +
-            '<h4>CATEGORY:</h4>' +
-            '<select name="select_cat" id="select_cat">' +
-            '<option value="*" id="*">All</ option>' +
-            '<option value="1" id="1">Km 0</option>' +
-            '<option value="2" id="2">Second Hand</option>' +
-            '<option value="3" id="3">Renting</option>' +
-            '<option value="4" id="4">Pre-Owned</option>' +
-            '<option value="5" id="5">Offer</option>' +
-            '<option value="6" id="6">New</option>' +
+            '<div class="sf-group">' +
+            '<span class="sf-group-label">Ciudad</span>' +
+            '<div class="sf-field">' +
+            '<select id="select_ciudad" class="sf-select">' +
+            '<option value="*">Todas</option>' +
+            '<option value="New York">New York</option>' +
+            '<option value="Miami">Miami</option>' +
+            '<option value="Los Angeles">Los Angeles</option>' +
+            '<option value="Boston">Boston</option>' +
+            '<option value="Golden State">Golden State</option>' +
+            '<option value="Dallas">Dallas</option>' +
             '</select>' +
             '</div>' +
-            '<hr class=hr-filter>' +
-            '</br><input type="button" class="submit_filter" id="buttons_filters" value="SEARCH">' +
-            '<input type="button" class="remove_filters" id="buttons_filters" value="REMOVE"></br>' +
             '</div>' +
-
-            '<div class="orderby_content">' +
-            '<p>ORDER BY:</p>' +
-            '<select id="orderby">' +
-            '<option value = "0">Order by...</option>' +
-            '<option value = "price">Price</option>' +
-            '<option value = "km">KM</option>' +
+            '<div class="sf-group">' +
+            '<span class="sf-group-label">Temporada</span>' +
+            '<div class="sf-field">' +
+            '<select id="select_temporada" class="sf-select">' +
+            '<option value="*">Todas</option>' +
+            '<option value="2023-24">2023-24</option>' +
+            '<option value="2024-25">2024-25</option>' +
+            '<option value="2025-26">2025-26</option>' +
             '</select>' +
-            '<input type="button" value="ORDER" id="order-btn" class="order-btn"/>' +
-            '</div>'
-        )
+            '</div>' +
+            '</div>' +
+            '<button class="sf-clear submit_filter" style="width:100%">Filtrar</button>' +
+            '<button class="sf-clear remove_filters" style="width:100%;margin-top:6px">Quitar filtros</button>'
+            
+        );
 
     $(document).on('click', '.submit_filter', function() {
         save_filters();
-        load_pagination();
     });
 
     $(document).on('click', '.remove_filters', function() {
@@ -165,61 +167,35 @@ function load_filter() {
 }
 
 function save_filters() {
-    var color = [];
-    var doors = [];
-    var category = [];
+    var tipos_evento = [];
     var filters = [];
 
     localStorage.removeItem('filters');
     localStorage.removeItem('search');
     localStorage.removeItem('order');
 
-    //color
-    $.each($("input[class='color']:checked"), function() {
-        color.push($(this).val());
+    $.each($("input[class*='tipo-evento']:checked"), function() {
+        tipos_evento.push($(this).val());
     });
-    if (color.length != 0) {
-        filters.push({ "Color": color });
+    if (tipos_evento.length != 0) {
+        filters.push({ "tipo_evento": tipos_evento });
     } else {
-        filters.push({ "Color": '*' });
+        filters.push({ "tipo_evento": '*' });
     }
-    //doors
-    $.each($("input[class='doors']:checked"), function() {
-        doors.push($(this).val());
-    });
-
-    if (doors.length != 0) {
-        filters.push({ "Num_doors": doors });
-    } else {
-        filters.push({ "Num_doors": '*' });
-    }
-
-    //category
-    var cat = document.getElementById("select_cat").value;
-    if (cat != 0) {
-        category.push(cat);
-        if (category == "*") {
-            filters.push({ "category": "*" });
-        } else {
-            filters.push({ "category": category });
-        }
-    } else {
-        filters.push({ "category": '*' });
-    }
-    //all_filters (localstorage)
-    if (filters.length != 0) {
-        localStorage.setItem('filters', JSON.stringify(filters));
-    }
+    var ciudad = document.getElementById("select_ciudad").value;
+    filters.push({ "ciudad": ciudad });
+    var temporada = document.getElementById("select_temporada").value;
+    filters.push({ "temporada": temporada });
+    localStorage.setItem('filters', JSON.stringify(filters));
     shop_filters();
 }
 
-function shop_filters(total_prod = 0, items_page = 4) {
+function shop_filters() {
     var all_filters = JSON.parse(localStorage.getItem('filters'));
-    var color = all_filters[0].Color;
-    var doors = all_filters[1].Num_doors[0];
-    var category = all_filters[2].category[0];
-
-    ajaxForSearch('module/1_shop/ctrl/ctrl_shop.php?op=filters&color=' + color + '&doors=' + doors + '&category=' + category, total_prod, items_page);
+    var tipo_evento = all_filters[0].tipo_evento;
+    var ciudad      = all_filters[1].ciudad;
+    var temporada   = all_filters[2].temporada;
+    ajaxForSearch('module/1_shop/ctrl/ctrl_shop.php?op=filters&tipo_evento=' + tipo_evento + '&ciudad=' + ciudad + '&temporada=' + temporada, 0, 12);
 }
 
 function highlightFilters() {
@@ -566,4 +542,8 @@ function more_cars_related(type_car) {
 $(document).ready(function() {
     loadEntradas();
     clicks();
+    load_filter();
+    $('#btn-back-list').on('click', function() {
+    $('#shop-detail-view').hide();  
+    $('#shop-list-view').show()});
 });

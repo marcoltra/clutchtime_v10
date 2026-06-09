@@ -10,9 +10,11 @@ switch ($_GET['op']) {
     case 'getEntradas':
     $desde = $_POST['desde'];
     $items = $_POST['items'];
+    $tipo  = $_GET['tipo'] ?? 'todos';
+
     try {
         $dao = new DAOShop();
-        $data = $dao->select_entradas($desde, $items);
+        $data = $dao->select_entradas($desde, $items, $tipo);
     } catch (Exception $e) {
         echo json_encode("error");
         exit;
@@ -56,6 +58,20 @@ case 'details_entrada':
         echo json_encode("error");
     }
     break;
+case 'getFilters':
+    try {
+        $dao = new DAOShop();
+        $data = $dao->getFilters();
+    } catch (Exception $e) {
+        echo json_encode("error");
+        exit;
+    }
+    if (!empty($data)) {
+        echo json_encode($data);
+    } else {
+        echo json_encode("error");
+    }
+break;
 
     case 'home_filter':
     $opc = $_GET['opc'];
